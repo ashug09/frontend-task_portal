@@ -31,7 +31,7 @@ export default function Landing() {
   return (
     <div ref={vantaRef}>
       <div className="flex">
-        {router.pathname === "/auth/login" ? <LoginPage /> : <RegisterPage />}
+        {router.pathname === "/auth/login" ? <RegisterPage /> : <LoginPage />}
         <div className="my-auto mx-10">
           <h1 className="text-white text-justify text-3xl">SEOhub</h1>
           <h1 className="text-white text-justify text-xl font-medium">
