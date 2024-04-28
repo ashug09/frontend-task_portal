@@ -24,6 +24,7 @@ export default function Nav_options() {
           Payments
         </button>
         <button
+        onClick={()=>router.push("/profile/profile")}
           className="text-white text-lg h-12 my-auto bg-blue-500 mx-2 rounded-xl px-8 mb-2 sm:mx-5 sm:mb-0"
         >
           Profile

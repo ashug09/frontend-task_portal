@@ -22,7 +22,7 @@ export default function Task_post() {
       // Handle form submission here, e.g., send data to backend
       console.log("Form submitted with values:", values);
       axios
-        .post("http://localhost:8000/api/v1/task/posttask", values)
+        .post(`${process.env.NEXT_PUBLIC_BE_URI}/api/v1/task/posttask`, values)
         .then((response) => {
           console.log(response);
           toast.success("posted successfully");

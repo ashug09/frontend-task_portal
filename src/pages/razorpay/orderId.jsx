@@ -8,7 +8,7 @@ const YourComponent = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.post("http://localhost:8000/api/v1/orderid", {
+        const response = await axios.post("${process.env.NEXT_PUBLIC_BE_URI}/api/v1/orderid", {
           amount: "50000"
         }, {
           headers: {

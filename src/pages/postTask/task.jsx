@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Editor } from "primereact/editor";
 
 import parse from "html-react-parser";
@@ -14,14 +14,31 @@ import { findFlagUrlByCountryName } from "country-flags-svg";
 import { Message } from "primereact/message";
 import Cryptr from "cryptr";
 import { useRouter } from "next/router";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import axios from "axios";
+import toast from "react-hot-toast";
+
 export default function BasicDemo() {
   //   {/* this below will be use to render html text on the task page, that text which will be fetched from the database */}
   //   <div
   //   className="ql-editor"
   //   dangerouslySetInnerHTML={{ __html: text }}
   // ></div>
-  const router = useRouter()
-  const cryptr = new Cryptr(process.env.NEXT_PUBLIC_CRYPTR);
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+  useEffect(() => {
+    const auth = getAuth();
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user);
+      }
+    });
+  }, []);
+  const cryptr = new Cryptr(process.env.NEXT_PUBLIC_CRYPTR, {
+    encoding: "base64",
+    pbkdf2Iterations: 1000,
+    saltLength: 10,
+  });
   const [text, setText] = useState("");
   const validationSchema = Yup.object().shape({
     selectedCategory: Yup.string().required("Category is required"),
@@ -29,39 +46,55 @@ export default function BasicDemo() {
     repeat: Yup.string().required("Repeat option is required"),
     maxTimeSpan: Yup.object().required("Max timespan is required"),
   });
+  const randomNumber = Math.floor(Math.random() * 100000000);
   const formik = useFormik({
     initialValues: {
+      taskId: randomNumber,
       title: "",
       link: "",
       description: text,
       conditions: "",
       selectedCategory: "",
       amount: "",
+      numberOfTasks: "",
       repeat: "",
       maxTimeSpan: "",
-      verifyPeriod: "",
-      distributionInterval: "",
+      // verifyPeriod: "",
+      // distributionInterval: "",
       uniqueIP: false,
       advertise: "",
       rating: "",
       selectedImplementers: "",
       geotargeting: "",
+      finalCost: "",
+      email: "",
     },
-    validationSchema: validationSchema,
+    // validationSchema: validationSchema,
     onSubmit: (values) => {
-      const encrypted = handleCrytion(cost);
+      const encrypted = handleCrytion(formik.values.finalCost);
       console.log("Form submitted with values:", values);
       // alert(JSON.stringify(values, null, 2));
-      router.push({
-        pathname: "/paymentGateway/paymentGateway",
-        query: { amt: encrypted },
-      })
+      axios
+        .post(`${process.env.NEXT_PUBLIC_BE_URI}/api/v1/task/posttask`, values)
+        .then((response) => {
+          console.log(response);
+          toast.success("posted successfully");
+          router.push({
+            pathname: "/paymentGateway/paymentGateway",
+            query: { amt: encrypted },
+          });
+        })
+        .catch((error) => {
+          console.log(error);
+          toast.error("Something went wrong Check Logs");
+        });
     },
   });
-const handleCrytion = (cost) => {
-  const encrypted = cryptr.encrypt(cost);
-  return encrypted
-}
+
+  const handleCrytion = (cost) => {
+    const encrypted = cryptr.encrypt(cost);
+    return encrypted;
+  };
   // handling rich text editor input
   const handleEditorChange = (e) => {
     const htmlValue = e.htmlValue;
@@ -188,26 +221,34 @@ const handleCrytion = (cost) => {
     );
   };
 
-  let cost = (
-    0.020 +
-    Number(formik.values.amount) +
-    (formik.values.uniqueIP ? 0.005 : null) +
-    Number(
-      formik.values.advertise?.rate != undefined
-        ? formik.values.advertise.rate
-        : null
-    ) +
-    Number(
-      formik.values.rating?.rate != undefined ? formik.values.rating.rate : null
-    ) +
-    Number(
-      formik.values.selectedImplementers?.rate != undefined
-        ? formik.values.selectedImplementers.rate
-        : null
-    )
-  ).toFixed(3);
+  let cost = parseFloat(
+    (
+      0 +
+      Number(formik.values.amount) * Number(formik.values.numberOfTasks) +
+      (formik.values.uniqueIP ? 0.005 : null) +
+      Number(
+        formik.values.advertise?.rate != undefined
+          ? formik.values.advertise.rate
+          : null
+      ) +
+      Number(
+        formik.values.rating?.rate != undefined
+          ? formik.values.rating.rate
+          : null
+      ) +
+      Number(
+        formik.values.selectedImplementers?.rate != undefined
+          ? formik.values.selectedImplementers.rate
+          : null
+      )
+    ).toFixed(2)
+  );
 
-
+  let finalCost = parseFloat((cost + cost * 0.2).toFixed(2));
+  const handleFormikCost = () => {
+    formik.setFieldValue("finalCost", finalCost);
+    formik.setFieldValue("email", user?.email);
+  };
   return (
     <>
       <div className="card mx-5">
@@ -339,6 +380,31 @@ const handleCrytion = (cost) => {
                 {formik.errors.amount && formik.touched.amount && (
                   <div className="text-red-500">{formik.errors.amount}</div>
                 )}
+              </div>
+
+              {/* number of tasks */}
+              <div className="flex flex-col gap-2 mb-4">
+                <label
+                  htmlFor="amount"
+                  className="block text-gray-700 text-sm font-bold mb-2"
+                >
+                  Number of tasks
+                </label>
+                <InputText
+                  className="border-2 p-1"
+                  keyfilter={"int"}
+                  type="text"
+                  id="numberOfTasks"
+                  name="numberOfTasks"
+                  value={formik.values.numberOfTasks}
+                  onChange={formik.handleChange}
+                />
+                {formik.errors.numberOfTasks &&
+                  formik.touched.numberOfTasks && (
+                    <div className="text-red-500">
+                      {formik.errors.numberOfTasks}
+                    </div>
+                  )}
               </div>
               {/* select task repetition option  */}
               <div className="flex flex-col justify-content-center py-4">
@@ -490,8 +556,14 @@ const handleCrytion = (cost) => {
             </div>
 
             <div className="flex flex-col">
-              <Message text={"Cost of implementation " + "$" + cost} />
+              <Message
+                className="my-2"
+                text={"Cost of implementation:" + "$" + finalCost}
+              />
+              <Message className="my-2" text={"including platform fees: 20%"} />
+
               <button
+                onClick={handleFormikCost}
                 type="submit"
                 className="my-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
               >

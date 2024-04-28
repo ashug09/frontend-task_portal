@@ -31,7 +31,7 @@ function Pay({amount}) {
     }
     console.log("this is response: ", res);
 
-    const data = await fetch("http://localhost:8000/api/v1/orderid", {
+    const data = await fetch("${process.env.NEXT_PUBLIC_BE_URI}/api/v1/orderid", {
       method: "POST",
     }).then((t) => t.json());
 
@@ -53,7 +53,7 @@ function Pay({amount}) {
           razorpaySignature: response.razorpay_signature,
         };
         await axios
-          .post("http://localhost:8000/api/v1/payment/verify", item)
+          .post("${process.env.NEXT_PUBLIC_BE_URI}/api/v1/payment/verify", item)
           .then((res) => {
             console.log(res.data);
             if (res.status == 200) {
