@@ -43,7 +43,7 @@ export default function New_nav() {
   ];
   const end = (
     <div onClick={() => router.push("/")} className="cursor-pointer">
-      <h1 className="text-3xl max-w-screen-xl mx-10">SpaceTrax</h1>
+      <h1 className="text-3xl max-w-screen-xl mx-10">SEOSpaceTrax</h1>
     </div>
   );
   return (

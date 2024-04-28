@@ -37,7 +37,7 @@ export default function Landing() {
         {router.pathname === "/auth/register" ? <RegisterPage /> : <LoginPage />}
       </div>
       <div className="md:w-1/2 my-auto mx-10">
-        <h1 className="text-white text-justify text-3xl mb-4">SEOhub</h1>
+        <h1 className="text-white text-justify text-3xl mb-4">SEOSpaceTrax</h1>
         <h1 className="text-white text-justify text-xl font-medium">
           Welcome to SEOhub, your go-to platform for maximizing your SEO
           efforts while earning rewards! At SEOhub, we offer a unique

@@ -7,7 +7,7 @@ import { useState } from "react";
 import Landing from "./landing";
 import { useRouter } from "next/router";
 import { PrimeReactProvider } from "primereact/api";
-import 'primeicons/primeicons.css';
+import "primeicons/primeicons.css";
 import "primereact/resources/themes/lara-light-cyan/theme.css";
 import New_nav from "./new_nav";
 
@@ -17,28 +17,21 @@ export default function App({ Component, pageProps }) {
   const [user, setUser] = useState(null);
   onAuthStateChanged(auth, (user) => {
     if (user) {
-      // User is signed in, see docs for a list of available properties
-      // https://firebase.google.com/docs/reference/js/auth.user
-      const uid = user.uid;
       sessionStorage.setItem("user", JSON.stringify(user));
-
       setUser(user);
-      // ...
-    } else {
-      // User is signed out
-      // ...
     }
   });
-  if (user 
-    ||
-     !user
-    ) {
+  if (
+    user
+    // ||
+    //  !user
+  ) {
     return (
       <>
         <div className="lg:mx-10">
           <PrimeReactProvider>
             {/* <Nav_options /> */}
-            <New_nav/>
+            <New_nav />
             <Component {...pageProps} />
           </PrimeReactProvider>
           <Toaster />
