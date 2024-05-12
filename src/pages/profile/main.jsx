@@ -126,6 +126,7 @@ export default function Main() {
       <InputSwitch checked={checked} onChange={(e) => setChecked(e.value)} />
     </div>
   );
+{checked ? router.push("/promoter/main") :null}
   return (
     <div className="card my-5 mx-auto">
       <div className="d-flex justify-content-evenly">

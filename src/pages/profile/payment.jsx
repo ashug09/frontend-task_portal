@@ -1,8 +1,37 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Main from "./main";
+import { useFormik } from "formik";
+import toast from "react-hot-toast";
+import Cryptr from "cryptr";
+import { useRouter } from "next/router";
+import axios from "axios";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 const PaymentDetailsPage = () => {
-
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+  const [dbUser, setDbUser] = useState(null);
+  useEffect(() => {
+    onAuthStateChanged(getAuth(), (user) => {
+      if (user) {
+        setUser(user);
+      }
+    });
+    user
+      ? axios
+          .post(`${process.env.NEXT_PUBLIC_BE_URI}/api/v1/user/getuser`, {
+            email: user?.email,
+          })
+          .then((response) => {
+            setDbUser(response.data);
+            console.log(response.data);
+          })
+          .catch((error) => {
+            toast.error("Something went wrong Check Logs");
+            console.log(error);
+          })
+      : null;
+  }, [user]);
   const transactions = [
     { id: 1, date: "2022-04-01", category: "Food", name: "Restaurant XYZ" },
     {
@@ -23,79 +52,41 @@ const PaymentDetailsPage = () => {
   return (
     <div>
       <Main />
-      <div className="lg:px-10 px-5 min-h-screen bg-gray-100 py-6 sm:py-12 sm:flex sm:justify-center">
-        <div className="max-w-3xl sm:w-1/2">
-          {/* Top-up Balance */}
-          <div className="relative px-4 py-10 bg-white shadow rounded-3xl sm:p-10">
-            <div className="max-w-md mx-auto">
-              <div>
+
+      <div className="px-5 min-h-screen bg-gray-100 py-6">
+        <div className="lg:flex lg:justify-evenly">
+          <div className="bg-white p-5 h-max rounded-xl shadow-md lg:w-96 w-full mt-8">
+          <div>
                 <h3 className="text-lg font-semibold">Advertising Balance</h3>
                 <div className="mt-2 text-gray-500">
-                  <p>Balance: $50.00</p>
-                  <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-2">
+                  <p className="text-lg">Balance: ${dbUser?.topUpBalance}</p>
+                  <button
+                    onClick={() => router.push("/profile/recharge")}
+                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-2"
+                  >
                     Recharge
                   </button>
                 </div>
               </div>
-            </div>
           </div>
 
-          {/* Main Balance */}
-          <div className="mt-6 relative px-4 py-10 bg-white shadow rounded-3xl sm:p-10">
-            <div className="max-w-md mx-auto">
-              <div>
-                <h3 className="text-lg font-semibold">Main Balance</h3>
-                <div className="mt-2 text-gray-500">
-                  <p>Balance: $100.00</p>
-                  <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2">
-                    Withdraw
-                  </button>
-                </div>
+          {/* main balance  */}
+          <div className="lg:w-96 w-full mt-8">
+            <div className="bg-white p-5 h-max rounded-xl shadow-md">
+              <h3 className="text-lg font-semibold">Main Balance</h3>
+              <div className="mt-2 text-gray-500">
+                <p className="text-lg">Balance: $100.00</p>
+                <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2">
+                  Withdraw
+                </button>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="max-w-3xl sm:w-1/2 sm:ml-6 mt-6 sm:mt-0">
-          {/* Payment Methods */}
-          <div className="relative px-4 py-10 bg-white shadow rounded-3xl sm:p-10">
-            <div className="max-w-md mx-auto">
-              <div className="text-left">
-                <h3 className="text-lg font-semibold mb-6">Payment Methods</h3>
-                <div className="border-b border-gray-300 pb-6">
-                  <h4 className="text-md font-semibold">Card Details</h4>
-                  <p className="text-gray-500">
-                    Credit Card: **** **** **** 1234
-                  </p>
-                  {/* Add other card details */}
-                  <div className="flex items-center mt-2">
-                    <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2">
-                      Edit
-                    </button>
-                    <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-                      Delete
-                    </button>
-                  </div>
-                </div>
-                <div className="mt-6">
-                  <h4 className="text-md font-semibold">Bank Details</h4>
-                  <p className="text-gray-500">Bank Account: **********</p>
-                  {/* Add other bank details */}
-                  <div className="flex items-center mt-2">
-                    <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2">
-                      Edit
-                    </button>
-                    <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Transactions */}
-          <div className="mt-6 relative px-4 py-10 bg-white shadow rounded-3xl sm:p-10">
+        <div className="">
+          {/* transactions  */}
+          <div className="mt-6 px-4 py-10 bg-white shadow rounded-3xl">
             <div className="max-w-md mx-auto">
               <h3 className="text-lg font-semibold">Transactions</h3>
               <table className="table-auto mt-4 w-full">
@@ -140,6 +131,43 @@ const PaymentDetailsPage = () => {
                   <option value="Utility">Utility</option>
                   {/* Add more categories as needed */}
                 </select>
+              </div>
+            </div>
+          </div>
+
+          {/* payment methods  */}
+          <div className=" p-10 mt-10 bg-white shadow rounded-3xl ">
+            <div className="max-w-md mx-auto">
+              <div className="text-left">
+                <h3 className="text-lg font-semibold mb-6">Payment Methods</h3>
+                <div className="border-b border-gray-300 pb-6">
+                  <h4 className="text-md font-semibold">Card Details</h4>
+                  <p className="text-gray-500">
+                    Credit Card: **** **** **** 1234
+                  </p>
+                  {/* Add other card details */}
+                  <div className="flex items-center mt-2">
+                    <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2">
+                      Edit
+                    </button>
+                    <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-6">
+                  <h4 className="text-md font-semibold">Bank Details</h4>
+                  <p className="text-gray-500">Bank Account: **********</p>
+                  {/* Add other bank details */}
+                  <div className="flex items-center mt-2">
+                    <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2">
+                      Edit
+                    </button>
+                    <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                      Delete
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

@@ -57,7 +57,7 @@ const Home = () => {
           method="POST"
         >
           <input type="hidden" name="PAYEE_ACCOUNT" value="U43280630" />
-          <input type="hidden" name="PAYEE_NAME" value="SEOsuperX" />
+          <input type="hidden" name="PAYEE_NAME" value="SEOEarnSpace" />
           <input type="text" name="PAYMENT_ID" defaultValue="" />
           <br />
           <input
@@ -74,13 +74,13 @@ const Home = () => {
           <input
             type="hidden"
             name="PAYMENT_URL"
-            value="https://87cadf84-ca90-446d-80ff-7dd14aefbc8e-00-13k8pgpmpqi9e.janeway.replit.dev/success"
+            value={`${process.env.NEXT_PUBLIC_FE_URI}/paymentGateway/paySuccess`}
           />
           <input type="hidden" name="PAYMENT_URL_METHOD" value="LINK" />
           <input
             type="hidden"
             name="NOPAYMENT_URL"
-            value="https://87cadf84-ca90-446d-80ff-7dd14aefbc8e-00-13k8pgpmpqi9e.janeway.replit.dev/error"
+            value={`${process.env.NEXT_PUBLIC_FE_URI}/paymentGateway/payError`}
           />
           <input type="hidden" name="NOPAYMENT_URL_METHOD" value="LINK" />
           <input type="hidden" name="SUGGESTED_MEMO" value="" />

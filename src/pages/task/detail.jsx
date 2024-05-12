@@ -103,7 +103,7 @@ const TaskDetailsPage = () => {
             evaluationDone: false,
             paymentInitiated: false,
           },
-          date: new Date,
+          date: new Date(),
         },
       })
       .then((response) => {
@@ -117,6 +117,13 @@ const TaskDetailsPage = () => {
         console.log(error);
         toast.error("Something went wrong Check Logs");
       });
+  };
+
+  const addWWW = url => {
+    if (!/^https?:\/\//i.test(url)) {
+      url = `https://www.${url}`;
+    }
+    return url;
   };
   return (
     <div className="container mx-auto my-8 lg:px-64 px-4">
@@ -139,9 +146,9 @@ const TaskDetailsPage = () => {
         <p>
           <strong>Link:</strong>{" "}
           <a
-            href={detail[0]?.link}
-            target="_blank"
+            href={addWWW(detail[0]?.link)}
             rel="noopener noreferrer"
+            target="_blank"
             className="text-blue-500"
           >
             {detail[0]?.link}
@@ -157,6 +164,14 @@ const TaskDetailsPage = () => {
               }}
             ></div>
           </p>
+          <div className="grid grid-cols-4 gap-4">
+            {detail[0]?.upload.map((image, index) => (
+              <div key={index}>
+                <img src={image} className="m-4" />
+                <a href={image} target="_blank" className="text-blue-700 text-center p-1 border-2 border-black rounded-lg">Download</a>
+              </div>
+            ))}
+          </div>
         </div>
         <div className="my-4 bg-yellow-100 p-2 rounded-xl border-2 border-yellow-500">
           <strong>Necessary Conditions:</strong>
@@ -173,7 +188,7 @@ const TaskDetailsPage = () => {
           <strong>Category:</strong> {detail[0]?.selectedCategory}
         </p>
         <p>
-          <strong>Amount Paid to User:</strong> {detail[0]?.amount}
+          <strong>Amount Paid to User:</strong> ${detail[0]?.amount}
         </p>
         <p>
           <strong>Repetition of Task:</strong> {detail[0]?.repeat}
@@ -183,7 +198,8 @@ const TaskDetailsPage = () => {
           {detail[0]?.maxTimeSpan.name}
         </p>
         <p>
-          <strong>Unique IP Required:</strong> {detail[0]?.uniqueIP ? "Yes" :"No"}
+          <strong>Unique IP Required:</strong>{" "}
+          {detail[0]?.uniqueIP ? "Yes" : "No"}
         </p>
       </div>
 

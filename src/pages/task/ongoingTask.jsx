@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { Timeline } from "primereact/timeline";
-import { useFormik } from "formik";
-import * as Yup from "yup";
 import { useRouter } from "next/router";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import Loading from "../../../loading";
 export default function OnGoingTask() {
   const [taskDetails, setTaskDetails] = useState([]);
   const [taskId, setTaskId] = useState(0);
   const [user, setUser] = useState(null);
+  const [dbUser, setDbUser] = useState(null);
   const [evaluateDetail, setEvaluateDetail] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [uploadLoading, setUploadLoading] = useState(false);
   const router = useRouter();
   useEffect(() => {
     if (router.isReady) {
@@ -22,6 +23,7 @@ export default function OnGoingTask() {
           setUser(userInfo);
           getevaluation(userInfo);
           gettaskwithid();
+          user ? getUserId() : null;
           setLoading(false);
         }
       });
@@ -51,11 +53,27 @@ export default function OnGoingTask() {
           console.log(error);
         }
       };
+      const getUserId = async () => {
+        axios
+          .post(`${process.env.NEXT_PUBLIC_BE_URI}/api/v1/user/getuser`, {
+            email: user?.email,
+          })
+          .then((response) => {
+            setDbUser(response.data);
+            console.log(response.data);
+          })
+          .catch((error) => {
+            console.log(error);
+            toast.error(
+              "Something went wrong Check Logs while fetching user ID from database"
+            );
+          });
+      };
     }
     evaluateDetail != {} && taskDetails != [] && user != null
       ? setLoading(false)
       : null;
-  }, [router.isReady]);
+  }, [router.isReady, user]);
   const events = [
     {
       status: "On Going",
@@ -93,42 +111,97 @@ export default function OnGoingTask() {
     );
   };
 
-  const initialValues = {
-    answer: "",
-    image: null,
+  const [answer, setAnswer] = useState("");
+  const [images, setImages] = useState([]);
+  const [imageUrls, setImageUrls] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+
+  const handleAnswerChange = (event) => {
+    setAnswer(event.target.value);
   };
 
-  const validationSchema = Yup.object().shape({
-    answer: Yup.string().required("Description is required"),
-    // image: Yup.mixed().required("Image is required"),
-  });
-  const handleSubmit = async (values, { setSubmitting }) => {
-    setLoading(true);
-    axios
-      .post(`${process.env.NEXT_PUBLIC_BE_URI}/api/v1/user/createsubmission`, {
-        promoterEmail: taskDetails[0]?.email,
-        userEmail: user?.email,
-        taskId: evaluateDetail.taskId,
-        answer: values.answer,
-      })
-      .then((response) => {
-        toast.success("Submitted Successfully");
-        formik.resetForm()
-        setLoading(false);
-      })
-      .catch((error) => {
-        toast.error("Something went wrong Check Logs");
-        console.log(error);
-        setLoading(false);
-      });
+  const handleImageChange = (event) => {
+    const files = event.target.files;
+    const newImages = [...images];
+    const newImagePreviews = [...imagePreviews];
+
+    for (let i = 0; i < files.length; i++) {
+      newImages.push(files[i]);
+      newImagePreviews.push(URL.createObjectURL(files[i]));
+    }
+
+    setImages(newImages);
+    setImagePreviews(newImagePreviews);
   };
-  const formik = useFormik({
-    initialValues,
-    validationSchema,
-    onSubmit: handleSubmit,
-  });
+
+  const handleAddImage = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.multiple = true;
+    input.onchange = handleImageChange;
+    input.click();
+  };
+  const handleRemoveImage = (index) => {
+    const newImages = [...images];
+    const newImagePreviews = [...imagePreviews];
+
+    newImages.splice(index, 1);
+    newImagePreviews.splice(index, 1);
+
+    setImages(newImages);
+    setImagePreviews(newImagePreviews);
+  };
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setUploadLoading(true);
+    if (evaluateDetail.status?.underEvaluation) {
+      alert("You have already submitted the task and is under evaluation");
+      return;
+    }
+    if (!answer) {
+      alert("Answer field is required");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("answer", answer);
+    images.forEach((image) => {
+      formData.append("image", image);
+    });
+    formData.append("promoterEmail", taskDetails[0]?.email);
+    formData.append("userEmail", user?.email);
+    formData.append("userId", dbUser?.userId);
+    formData.append("taskId", evaluateDetail.taskId);
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BE_URI}/api/v1/user/createsubmission`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      if (response) {
+        setUploadLoading(false);
+        toast.success("Your submission has been submitted successfully");
+        setAnswer("");
+        setImages([]);
+        setImageUrls([]);
+        setImagePreviews([]);
+        router.reload();
+      }
+    } catch (error) {
+      console.error("Error uploading images:", error);
+      toast.error("Something went wrong Check Logs");
+    }
+  };
+
   return (
     <div>
+      {uploadLoading ? (
+        <Loading message={"Uploading your submission..."} />
+      ) : null}
       {loading ? (
         <i className="pi pi-spin pi-spinner" style={{ fontSize: "2rem" }}></i>
       ) : (
@@ -157,7 +230,9 @@ export default function OnGoingTask() {
           {/* TASK DETAILS */}
           <div>
             <div>
-              <h1 className="text-xl font-semibold mb-6"></h1>
+              <h1 className="text-xl m-5 font-semibold mb-6">
+                Prepare & Submit Report
+              </h1>
             </div>
             <div className="my-4 mx-2 bg-yellow-100 p-2 rounded-xl border-2 border-yellow-500">
               <strong>Necessary Conditions:</strong>
@@ -178,62 +253,60 @@ export default function OnGoingTask() {
               <h1 className="text-3xl font-semibold mb-6 text-center">
                 Task Submission
               </h1>
-              <form onSubmit={formik.handleSubmit}>
-                <div className="mb-4">
-                  <label
-                    htmlFor="answer"
-                    className="block text-gray-700 text-sm font-bold mb-2"
-                  >
-                    Details to verify
-                  </label>
+              <form
+                onSubmit={handleSubmit}
+                className="flex flex-col items-center"
+              >
+                <label className="block w-full max-w-md p-2 mb-4 text-gray-700">
+                  Answer:
                   <textarea
-                    id="answer"
-                    name="answer"
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    value={formik.values.answer}
-                    className="w-full border rounded-md py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    type="text"
+                    value={answer}
+                    onChange={handleAnswerChange}
+                    className="block w-full max-w-md p-2 border border-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                   />
-                  {formik.touched.answer && formik.errors.answer && (
-                    <div className="text-red-500 text-xs mt-1">
-                      {formik.errors.answer}
-                    </div>
-                  )}
-                </div>
-
-                <div className="mb-4">
-                  <label
-                    htmlFor="image"
-                    className="block text-gray-700 text-sm font-bold mb-2"
+                </label>
+                <div className="block w-full max-w-md p-2 mb-4">
+                  <button
+                    type="button"
+                    onClick={handleAddImage}
+                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                   >
-                    Upload Image
-                  </label>
-                  <input
-                    type="file"
-                    id="image"
-                    name="image"
-                    onChange={(event) => {
-                      formik.setFieldValue(
-                        "image",
-                        event.currentTarget.files[0]
-                      );
-                    }}
-                    className="w-full border rounded-md py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  />
-                  {formik.touched.image && formik.errors.image && (
-                    <div className="text-red-500 text-xs mt-1">
-                      {formik.errors.image}
-                    </div>
-                  )}
+                    Add Images
+                  </button>
                 </div>
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="flex items-center">
+                    <img
+                      src={preview}
+                      alt={`Selected image ${index}`}
+                      className="w-64 h-64 object-cover rounded-md shadow-md m-2"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(index)}
+                      className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
 
-                <button
-                  type="submit"
-                  disabled={formik.isSubmitting}
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                >
-                  {formik.isSubmitting ? "Submitting..." : "Submit"}
-                </button>
+                {evaluateDetail.status?.underEvaluation ? (
+                  <button
+                    disabled={true}
+                    className="bg-red-500 hover:bg-red-700 cursor-not-allowed text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                  >
+                    Already Submitted
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                  >
+                    Submit
+                  </button>
+                )}
               </form>
             </div>
           </div>

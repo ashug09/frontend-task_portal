@@ -17,6 +17,7 @@ import { useRouter } from "next/router";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import axios from "axios";
 import toast from "react-hot-toast";
+import Loading from "../../../loading";
 
 export default function BasicDemo() {
   //   {/* this below will be use to render html text on the task page, that text which will be fetched from the database */}
@@ -25,7 +26,9 @@ export default function BasicDemo() {
   //   dangerouslySetInnerHTML={{ __html: text }}
   // ></div>
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
+  let topUpBalance = 0;
   useEffect(() => {
     const auth = getAuth();
     onAuthStateChanged(auth, (user) => {
@@ -69,25 +72,83 @@ export default function BasicDemo() {
       finalCost: "",
       email: "",
     },
-    // validationSchema: validationSchema,
+    validationSchema: validationSchema,
     onSubmit: (values) => {
+      setLoading(true);
+      // Handle form submission here, e.g., send data to backend
       const encrypted = handleCrytion(formik.values.finalCost);
       console.log("Form submitted with values:", values);
       // alert(JSON.stringify(values, null, 2));
-      axios
-        .post(`${process.env.NEXT_PUBLIC_BE_URI}/api/v1/task/posttask`, values)
-        .then((response) => {
-          console.log(response);
-          toast.success("posted successfully");
-          router.push({
-            pathname: "/paymentGateway/paymentGateway",
-            query: { amt: encrypted },
+      const formData = new FormData();
+      images.forEach((image) => {
+        formData.append("image", image);
+      });
+      Object.entries(values).forEach(([key, value]) => {
+        if (value instanceof File) {
+          formData.append(key, value);
+        } else if (Array.isArray(value)) {
+          value.forEach((item, index) => {
+            formData.append(`${key}[${index}]`, item);
           });
+        } else if (typeof value === "object" && value !== null) {
+          Object.entries(value).forEach(([subKey, subValue]) => {
+            formData.append(`${key}[${subKey}]`, subValue);
+          });
+        } else {
+          formData.append(key, value);
+        }
+      });
+      axios
+        .post(`${process.env.NEXT_PUBLIC_BE_URI}/api/v1/user/getuser`, {
+          email: user?.email,
+        })
+        .then((response) => {
+          topUpBalance = response.data.topUpBalance;
         })
         .catch((error) => {
           console.log(error);
           toast.error("Something went wrong Check Logs");
         });
+      if (topUpBalance < formik.values.finalCost) {
+        setLoading(false);
+        toast.error("Insufficient Balance");
+        return;
+      } else {
+        axios
+          .post(
+            `${process.env.NEXT_PUBLIC_BE_URI}/api/v1/user/updatetopupbalancedec`,
+            {
+              topUpBalance: finalCost,
+              email: user?.email,
+            }
+          )
+          .then((response) => {
+            axios
+              .post(
+                `${process.env.NEXT_PUBLIC_BE_URI}/api/v1/task/posttask`,
+                formData,
+                {
+                  headers: {
+                    "Content-Type": "multipart/form-data",
+                  },
+                }
+              )
+              .then((response) => {
+                setLoading(false);
+                console.log(response.data);
+                router.reload();
+                toast.success("posted successfully");
+              })
+              .catch((error) => {
+                console.log(error);
+                toast.error("Something went wrong Check Logs");
+              });
+          })
+          .catch((error) => {
+            console.log(error);
+            toast.error("Something went wrong Check Logs");
+          });
+      }
     },
   });
 
@@ -220,6 +281,40 @@ export default function BasicDemo() {
       </div>
     );
   };
+  const [images, setImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const handleImageChange = (event) => {
+    const files = event.target.files;
+    const newImages = [...images];
+    const newImagePreviews = [...imagePreviews];
+
+    for (let i = 0; i < files.length; i++) {
+      newImages.push(files[i]);
+      newImagePreviews.push(URL.createObjectURL(files[i]));
+    }
+
+    setImages(newImages);
+    setImagePreviews(newImagePreviews);
+  };
+
+  const handleAddImage = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.multiple = true;
+    input.onchange = handleImageChange;
+    input.click();
+  };
+  const handleRemoveImage = (index) => {
+    const newImages = [...images];
+    const newImagePreviews = [...imagePreviews];
+
+    newImages.splice(index, 1);
+    newImagePreviews.splice(index, 1);
+
+    setImages(newImages);
+    setImagePreviews(newImagePreviews);
+  };
 
   let cost = parseFloat(
     (
@@ -252,326 +347,372 @@ export default function BasicDemo() {
   return (
     <>
       <div className="card mx-5">
-        <div className="max-w-lg mx-auto">
-          <form
-            onSubmit={formik.handleSubmit}
-            className="bg-white shadow-md rounded px-5 pt-6 pb-8 mb-4"
-          >
-            {/* title  */}
-            <div className="flex flex-col gap-2 mb-4">
-              <label
-                htmlFor="link"
-                className="block text-gray-700 text-sm font-bold mb-2"
-              >
-                Title
-              </label>
-              <InputText
-                className="border-2  p-1"
-                type="text"
-                id="title"
-                name="title"
-                value={formik.values.title}
-                onChange={formik.handleChange}
-              />
-            </div>
-            {/* link  */}
-            <div className="flex flex-col gap-2 mb-4">
-              <label
-                htmlFor="link"
-                className="block text-gray-700 text-sm font-bold mb-2"
-              >
-                Link (URL)
-              </label>
-              <InputText
-                className="border-2  p-1"
-                type="text"
-                id="link"
-                name="link"
-                value={formik.values.link}
-                onChange={formik.handleChange}
-              />
-            </div>
-            {/* task description  */}
-            <div className="mb-4">
-              <label
-                htmlFor="description"
-                className="block text-gray-700 text-sm font-bold mb-2"
-              >
-                Description of Task
-              </label>
-              <Editor
-                type="text"
-                id="description"
-                name="description"
-                value={text}
-                onTextChange={handleEditorChange}
-                style={{ height: "320px" }}
-              />
-            </div>
-            {/* necessary condititon  */}
-            <div className="mb-4">
-              <label
-                htmlFor="description"
-                className="block text-gray-700 text-sm font-bold mb-2"
-              >
-                Necessary condition to fulfill task
-              </label>
-              <Editor
-                type="text"
-                id="conditions"
-                name="conditions"
-                value={necessary}
-                onTextChange={handleNecessaryChange}
-                style={{ height: "320px" }}
-              />
-            </div>
-
-            {/* Mandatory site parameters  */}
-            <div>
-              <h1 className="block text-gray-700 text-lg font-bold mb-2 underline ">
-                Mandatory site parameters
-              </h1>
-              {/* select category  */}
-              <div className="flex flex-col py-4">
-                <label
-                  className="pb-2 block text-gray-700 text-sm font-bold mb-2"
-                  htmlFor="selectedCategory"
-                >
-                  Select a Category
-                </label>
-                <Dropdown
-                  id="selectedCategory"
-                  name="selectedCategory"
-                  value={formik.values.selectedCategory}
-                  options={categoriesOptions.map((category) => ({
-                    label: category.name,
-                    value: category.name,
-                  }))}
-                  onChange={(e) =>
-                    formik.setFieldValue("selectedCategory", e.value)
-                  }
-                  placeholder="Select a Category"
-                  className="w-full md:w-14rem border-2 p-1"
-                />
-                {formik.errors.selectedCategory &&
-                  formik.touched.selectedCategory && (
-                    <div className="text-red-500">
-                      {formik.errors.selectedCategory}
-                    </div>
-                  )}
-              </div>
-              {/* amount that would be paid to the user for completing the task */}
+        {loading ? (
+          <Loading message={"posting your task ..."} />
+        ) : (
+          <div className="w-[70%] mx-auto">
+            <h1 className="text-2xl font-bold">Post Promotion</h1>
+            <p className="text-gray-500">
+              create your promotion online by filling up the form
+            </p>
+            <form
+              onSubmit={formik.handleSubmit}
+              className="bg-white shadow-md rounded px-5 pt-6 pb-8 mb-4"
+            >
+              {/* title  */}
               <div className="flex flex-col gap-2 mb-4">
                 <label
-                  htmlFor="amount"
+                  htmlFor="link"
                   className="block text-gray-700 text-sm font-bold mb-2"
                 >
-                  Amount paid to complete task
+                  Title
                 </label>
                 <InputText
-                  className="border-2 p-1"
-                  keyfilter={"money"}
+                  className="border-2  p-1"
                   type="text"
-                  id="amount"
-                  name="amount"
-                  value={formik.values.amount}
+                  id="title"
+                  name="title"
+                  value={formik.values.title}
                   onChange={formik.handleChange}
                 />
-                {formik.errors.amount && formik.touched.amount && (
-                  <div className="text-red-500">{formik.errors.amount}</div>
-                )}
               </div>
-
-              {/* number of tasks */}
+              {/* link  */}
               <div className="flex flex-col gap-2 mb-4">
                 <label
-                  htmlFor="amount"
+                  htmlFor="link"
                   className="block text-gray-700 text-sm font-bold mb-2"
                 >
-                  Number of tasks
+                  Link (URL)
                 </label>
                 <InputText
-                  className="border-2 p-1"
-                  keyfilter={"int"}
+                  className="border-2  p-1"
                   type="text"
-                  id="numberOfTasks"
-                  name="numberOfTasks"
-                  value={formik.values.numberOfTasks}
+                  id="link"
+                  name="link"
+                  value={formik.values.link}
                   onChange={formik.handleChange}
                 />
-                {formik.errors.numberOfTasks &&
-                  formik.touched.numberOfTasks && (
-                    <div className="text-red-500">
-                      {formik.errors.numberOfTasks}
-                    </div>
-                  )}
               </div>
-              {/* select task repetition option  */}
-              <div className="flex flex-col justify-content-center py-4">
+              {/* task description  */}
+              <div className="mb-4">
                 <label
-                  htmlFor="repeat"
-                  className="pb-2 block text-gray-700 text-sm font-bold mb-2"
+                  htmlFor="description"
+                  className="block text-gray-700 text-sm font-bold mb-2"
                 >
-                  Select Repeat Option
+                  Description of Task
                 </label>
-                <Dropdown
-                  value={formik.values.repeat}
-                  onChange={(e) => formik.setFieldValue("repeat", e.value)}
-                  options={repeatedTimesOptions}
-                  optionLabel="label"
-                  optionGroupLabel="label"
-                  optionGroupChildren="items"
-                  optionGroupTemplate={repeatedTimesTemplate}
-                  className="w-full md:w-14rem border-2 p-1"
-                  placeholder="Select Repeat Option"
+                <Editor
+                  type="text"
+                  id="description"
+                  name="description"
+                  value={text}
+                  onTextChange={handleEditorChange}
+                  style={{ height: "320px" }}
                 />
-                {formik.errors.repeat && formik.touched.repeat && (
-                  <div className="text-red-500">{formik.errors.repeat}</div>
-                )}
               </div>
-              {/* Max timespan to complete task  */}
-              <div className="flex flex-col py-4">
-                <label
-                  className="pb-2 block text-gray-700 text-sm font-bold mb-2"
-                  htmlFor="maxTimeSpan"
-                >
-                  Max timespan to complete task
-                </label>
-                <Dropdown
-                  value={formik.values.maxTimeSpan}
-                  onChange={(e) => formik.setFieldValue("maxTimeSpan", e.value)}
-                  options={maxTimeSpanOptions}
-                  optionLabel="name"
-                  placeholder="Select Max Timespan"
-                  className="w-full md:w-14rem border-2 p-1"
-                />
-                {formik.errors.maxTimeSpan && formik.touched.maxTimeSpan && (
-                  <div className="text-red-500">
-                    {formik.errors.maxTimeSpan}
+
+              {/* images for reference upload button  */}
+              <div>
+                <h1 className="text-sm font-semibold">
+                  Add Images For Reference
+                </h1>
+                <div className="block w-full max-w-md p-2 mb-4">
+                  <button
+                    type="button"
+                    onClick={handleAddImage}
+                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                  >
+                    Add Images
+                  </button>
+                </div>
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="flex items-center">
+                    <img
+                      src={preview}
+                      alt={`Selected image ${index}`}
+                      className="w-64 h-64 object-cover rounded-md shadow-md m-2"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(index)}
+                      className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    >
+                      Remove
+                    </button>
                   </div>
-                )}
+                ))}
               </div>
-            </div>
 
-            {/* additional parameters  */}
-            <div>
-              <h1 className="block text-gray-700 text-lg font-bold mb-2 underline ">
-                Additional site parameters
-              </h1>
-              {/* uniqueIP for task */}
-              <div className="flex flex-col py-4">
+              {/* necessary condititon  */}
+              <div className="mb-4">
                 <label
-                  className="pb-2 block text-gray-700 text-sm font-bold mb-2"
-                  htmlFor="maxTimeSpan"
+                  htmlFor="description"
+                  className="block text-gray-700 text-sm font-bold mb-2"
                 >
-                  Only by uniqueIP
+                  Necessary condition to fulfill task
                 </label>
-                <ToggleButton
-                  checked={formik.values.uniqueIP}
-                  onChange={(e) => formik.setFieldValue("uniqueIP", e.value)}
-                  className="border-2 rounded-lg"
+                <Editor
+                  type="text"
+                  id="conditions"
+                  name="conditions"
+                  value={necessary}
+                  onTextChange={handleNecessaryChange}
+                  style={{ height: "320px" }}
                 />
-                <div>
-                  {formik.values.uniqueIP ? (
-                    <h1 className="m-2 font-bold">+ $0.005</h1>
-                  ) : null}
+              </div>
+
+              {/* Mandatory site parameters  */}
+              <div>
+                <h1 className="block text-gray-700 text-lg font-bold mb-2 underline ">
+                  Mandatory site parameters
+                </h1>
+                {/* select category  */}
+                <div className="flex flex-col py-4">
+                  <label
+                    className="pb-2 block text-gray-700 text-sm font-bold mb-2"
+                    htmlFor="selectedCategory"
+                  >
+                    Select a Category
+                  </label>
+                  <Dropdown
+                    id="selectedCategory"
+                    name="selectedCategory"
+                    value={formik.values.selectedCategory}
+                    options={categoriesOptions.map((category) => ({
+                      label: category.name,
+                      value: category.name,
+                    }))}
+                    onChange={(e) =>
+                      formik.setFieldValue("selectedCategory", e.value)
+                    }
+                    placeholder="Select a Category"
+                    className="w-full md:w-14rem border-2 p-1"
+                  />
+                  {formik.errors.selectedCategory &&
+                    formik.touched.selectedCategory && (
+                      <div className="text-red-500">
+                        {formik.errors.selectedCategory}
+                      </div>
+                    )}
+                </div>
+                {/* amount that would be paid to the user for completing the task */}
+                <div className="flex flex-col gap-2 mb-4">
+                  <label
+                    htmlFor="amount"
+                    className="block text-gray-700 text-sm font-bold mb-2"
+                  >
+                    Amount paid to complete task
+                  </label>
+                  <InputText
+                    className="border-2 p-1"
+                    keyfilter={"money"}
+                    type="text"
+                    id="amount"
+                    name="amount"
+                    value={formik.values.amount}
+                    onChange={formik.handleChange}
+                  />
+                  {formik.errors.amount && formik.touched.amount && (
+                    <div className="text-red-500">{formik.errors.amount}</div>
+                  )}
+                </div>
+
+                {/* number of tasks */}
+                <div className="flex flex-col gap-2 mb-4">
+                  <label
+                    htmlFor="amount"
+                    className="block text-gray-700 text-sm font-bold mb-2"
+                  >
+                    Number of tasks
+                  </label>
+                  <InputText
+                    className="border-2 p-1"
+                    keyfilter={"int"}
+                    type="text"
+                    id="numberOfTasks"
+                    name="numberOfTasks"
+                    value={formik.values.numberOfTasks}
+                    onChange={formik.handleChange}
+                  />
+                  {formik.errors.numberOfTasks &&
+                    formik.touched.numberOfTasks && (
+                      <div className="text-red-500">
+                        {formik.errors.numberOfTasks}
+                      </div>
+                    )}
+                </div>
+                {/* select task repetition option  */}
+                <div className="flex flex-col justify-content-center py-4">
+                  <label
+                    htmlFor="repeat"
+                    className="pb-2 block text-gray-700 text-sm font-bold mb-2"
+                  >
+                    Select Repeat Option
+                  </label>
+                  <Dropdown
+                    value={formik.values.repeat}
+                    onChange={(e) => formik.setFieldValue("repeat", e.value)}
+                    options={repeatedTimesOptions}
+                    optionLabel="label"
+                    optionGroupLabel="label"
+                    optionGroupChildren="items"
+                    optionGroupTemplate={repeatedTimesTemplate}
+                    className="w-full md:w-14rem border-2 p-1"
+                    placeholder="Select Repeat Option"
+                  />
+                  {formik.errors.repeat && formik.touched.repeat && (
+                    <div className="text-red-500">{formik.errors.repeat}</div>
+                  )}
+                </div>
+                {/* Max timespan to complete task  */}
+                <div className="flex flex-col py-4">
+                  <label
+                    className="pb-2 block text-gray-700 text-sm font-bold mb-2"
+                    htmlFor="maxTimeSpan"
+                  >
+                    Max timespan to complete task
+                  </label>
+                  <Dropdown
+                    value={formik.values.maxTimeSpan}
+                    onChange={(e) =>
+                      formik.setFieldValue("maxTimeSpan", e.value)
+                    }
+                    options={maxTimeSpanOptions}
+                    optionLabel="name"
+                    placeholder="Select Max Timespan"
+                    className="w-full md:w-14rem border-2 p-1"
+                  />
+                  {formik.errors.maxTimeSpan && formik.touched.maxTimeSpan && (
+                    <div className="text-red-500">
+                      {formik.errors.maxTimeSpan}
+                    </div>
+                  )}
                 </div>
               </div>
-              {/* advertise  */}
-              <div className="flex flex-col py-4">
-                <label
-                  className="pb-2 block text-gray-700 text-sm font-bold mb-2"
-                  htmlFor="advertise"
-                >
-                  Advertise your tsk on our site
-                </label>
-                <Dropdown
-                  value={formik.values.advertise}
-                  onChange={(e) => formik.setFieldValue("advertise", e.value)}
-                  options={advertiseOptions}
-                  optionLabel="name"
-                  placeholder="Select Advertise Option"
-                  className="w-full md:w-14rem border-2 p-1"
-                />
-              </div>
-              {/* rating vale users ya fir all users  */}
-              <div className="flex flex-col py-4">
-                <label
-                  className="pb-2 block text-gray-700 text-sm font-bold mb-2"
-                  htmlFor="rating"
-                >
-                  Task only for selected user based on rating
-                </label>
-                <Dropdown
-                  value={formik.values.rating}
-                  onChange={(e) => formik.setFieldValue("rating", e.value)}
-                  options={ratingOptions}
-                  optionLabel="name"
-                  placeholder="Select Rating Option"
-                  className="w-full md:w-14rem border-2 p-1"
-                />
-              </div>
-              {/* selected implementers  */}
-              <div className="flex flex-col py-4">
-                <label
-                  className="pb-2 block text-gray-700 text-sm font-bold mb-2"
-                  htmlFor="selectedImplementers"
-                >
-                  Selected Implementers
-                </label>
-                <Dropdown
-                  value={formik.values.selectedImplementers}
-                  onChange={(e) =>
-                    formik.setFieldValue("selectedImplementers", e.value)
-                  }
-                  options={selectedImplementersOptions}
-                  optionLabel="name"
-                  placeholder="Select Implementers Option"
-                  className="w-full md:w-14rem border-2 p-1"
-                />
-              </div>
-              {/* geotargeting  */}
-              <div className="flex flex-col py-4">
-                <label
-                  className="pb-2 block text-gray-700 text-sm font-bold mb-2"
-                  htmlFor="selectedImplementers"
-                >
-                  Geotargeting (selected countries)
-                </label>
-                <MultiSelect
-                  value={formik.values.geotargeting}
-                  options={countryData}
-                  onChange={(e) =>
-                    formik.setFieldValue("geotargeting", e.value)
-                  }
-                  optionLabel="name"
-                  filter
-                  placeholder="Select Countries"
-                  itemTemplate={geoTargetingTemplate}
-                  panelFooterTemplate={panelFooterTemplate}
-                  className="w-full md:w-20rem border-2 p-1"
-                  display="chip"
-                />
-              </div>
-            </div>
 
-            <div className="flex flex-col">
-              <Message
-                className="my-2"
-                text={"Cost of implementation:" + "$" + finalCost}
-              />
-              <Message className="my-2" text={"including platform fees: 20%"} />
+              {/* additional parameters  */}
+              <div>
+                <h1 className="block text-gray-700 text-lg font-bold mb-2 underline ">
+                  Additional site parameters
+                </h1>
+                {/* uniqueIP for task */}
+                <div className="flex flex-col py-4">
+                  <label
+                    className="pb-2 block text-gray-700 text-sm font-bold mb-2"
+                    htmlFor="maxTimeSpan"
+                  >
+                    Only by uniqueIP
+                  </label>
+                  <ToggleButton
+                    checked={formik.values.uniqueIP}
+                    onChange={(e) => formik.setFieldValue("uniqueIP", e.value)}
+                    className="border-2 rounded-lg"
+                  />
+                  <div>
+                    {formik.values.uniqueIP ? (
+                      <h1 className="m-2 font-bold">+ $0.005</h1>
+                    ) : null}
+                  </div>
+                </div>
+                {/* advertise  */}
+                <div className="flex flex-col py-4">
+                  <label
+                    className="pb-2 block text-gray-700 text-sm font-bold mb-2"
+                    htmlFor="advertise"
+                  >
+                    Advertise your tsk on our site
+                  </label>
+                  <Dropdown
+                    value={formik.values.advertise}
+                    onChange={(e) => formik.setFieldValue("advertise", e.value)}
+                    options={advertiseOptions}
+                    optionLabel="name"
+                    placeholder="Select Advertise Option"
+                    className="w-full md:w-14rem border-2 p-1"
+                  />
+                </div>
+                {/* rating vale users ya fir all users  */}
+                <div className="flex flex-col py-4">
+                  <label
+                    className="pb-2 block text-gray-700 text-sm font-bold mb-2"
+                    htmlFor="rating"
+                  >
+                    Task only for selected user based on rating
+                  </label>
+                  <Dropdown
+                    value={formik.values.rating}
+                    onChange={(e) => formik.setFieldValue("rating", e.value)}
+                    options={ratingOptions}
+                    optionLabel="name"
+                    placeholder="Select Rating Option"
+                    className="w-full md:w-14rem border-2 p-1"
+                  />
+                </div>
+                {/* selected implementers  */}
+                <div className="flex flex-col py-4">
+                  <label
+                    className="pb-2 block text-gray-700 text-sm font-bold mb-2"
+                    htmlFor="selectedImplementers"
+                  >
+                    Selected Implementers
+                  </label>
+                  <Dropdown
+                    value={formik.values.selectedImplementers}
+                    onChange={(e) =>
+                      formik.setFieldValue("selectedImplementers", e.value)
+                    }
+                    options={selectedImplementersOptions}
+                    optionLabel="name"
+                    placeholder="Select Implementers Option"
+                    className="w-full md:w-14rem border-2 p-1"
+                  />
+                </div>
+                {/* geotargeting  */}
+                <div className="flex flex-col py-4">
+                  <label
+                    className="pb-2 block text-gray-700 text-sm font-bold mb-2"
+                    htmlFor="selectedImplementers"
+                  >
+                    Geotargeting (selected countries)
+                  </label>
+                  <MultiSelect
+                    value={formik.values.geotargeting}
+                    options={countryData}
+                    onChange={(e) =>
+                      formik.setFieldValue("geotargeting", e.value)
+                    }
+                    optionLabel="name"
+                    filter
+                    placeholder="Select Countries"
+                    itemTemplate={geoTargetingTemplate}
+                    panelFooterTemplate={panelFooterTemplate}
+                    className="w-full md:w-20rem border-2 p-1"
+                    display="chip"
+                  />
+                </div>
+              </div>
 
-              <button
-                onClick={handleFormikCost}
-                type="submit"
-                className="my-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-              >
-                Submit
-              </button>
-            </div>
-          </form>
-        </div>
+              <div className="flex flex-col">
+                <Message
+                  className="my-2"
+                  text={"Cost of implementation:" + "$" + finalCost}
+                />
+                <Message
+                  className="my-2"
+                  text={"including platform fees: 20%"}
+                />
+
+                <button
+                  onClick={handleFormikCost}
+                  type="submit"
+                  className="my-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                  Submit
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
       </div>
     </>
   );

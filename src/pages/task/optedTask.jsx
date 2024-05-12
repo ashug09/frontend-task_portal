@@ -38,7 +38,8 @@ export default function OptedTask() {
   }, [router.isReady]);
   return (
     <div>
-        <Main/>
+      <Main />
+      <div className="lg:grid lg:grid-cols-2">
       {evaluate.map((item) => (
         <div
           className="max-w-md bg-white shadow-lg rounded-lg overflow-hidden mx-auto my-4 lg:w-[720px]"
@@ -78,6 +79,8 @@ export default function OptedTask() {
           </div>
         </div>
       ))}
+
+      </div>
     </div>
   );
 }
