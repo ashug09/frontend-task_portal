@@ -86,54 +86,7 @@ const PaymentDetailsPage = () => {
 
         <div className="">
           {/* transactions  */}
-          <div className="mt-6 px-4 py-10 bg-white shadow rounded-3xl">
-            <div className="max-w-md mx-auto">
-              <h3 className="text-lg font-semibold">Transactions</h3>
-              <table className="table-auto mt-4 w-full">
-                <thead>
-                  <tr>
-                    <th className="px-4 py-2">Date</th>
-                    <th className="px-4 py-2">Category</th>
-                    <th className="px-4 py-2">Name</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transactions.map((transaction) => (
-                    <tr key={transaction.id}>
-                      <td className="border px-4 py-2">{transaction.date}</td>
-                      <td
-                        className={`border px-4 py-2 ${getColorByCategory(
-                          transaction.category
-                        )}`}
-                      >
-                        {transaction.category}
-                      </td>
-                      <td className="border px-4 py-2">{transaction.name}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="mt-4">
-                <label
-                  htmlFor="categoryFilter"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Filter by Category:
-                </label>
-                <select
-                  id="categoryFilter"
-                  name="categoryFilter"
-                  className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="">All</option>
-                  <option value="Food">Food</option>
-                  <option value="Shopping">Shopping</option>
-                  <option value="Utility">Utility</option>
-                  {/* Add more categories as needed */}
-                </select>
-              </div>
-            </div>
-          </div>
+          
 
           {/* payment methods  */}
           <div className=" p-10 mt-10 bg-white shadow rounded-3xl ">

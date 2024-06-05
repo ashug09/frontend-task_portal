@@ -13,7 +13,12 @@ import { FaRepeat } from "react-icons/fa6";
 import { IoBookmark } from "react-icons/io5";
 import { IoBookmarkOutline } from "react-icons/io5";
 import { IoTimer } from "react-icons/io5";
+import Loading from "../../../loading";
+
+import loadingGif from "../images/loadingGif.gif"
+import Image from "next/image";
 export default function Task() {
+  const [loading, setLoading] = useState(true)
   const [items, setItems] = useState([]);
   const[image, setImage] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -28,6 +33,7 @@ export default function Task() {
       .then((response) => {
         console.log(response.data);
         dispatch(addTask(response.data));
+        setLoading(false)
       })
       .catch((error) => {
         console.log(error)
@@ -69,7 +75,12 @@ export default function Task() {
   ];
   // console.log(sessionStorage.getItem("values"));
   return (
-    <div className="mx-10">
+    <>
+    {loading ?<>
+    <Image className="mx-auto" height={200} width={200} src={loadingGif} />
+    <h1 className="text-center">loading tasks....</h1>
+      <Loading message={"loading tasks"}/>
+    </> : <div className="mx-10">
       {/* categories section  */}
       {/* <div className="lg:w-1/4 ml-10 mt-10 mr-2">
         <h1 className="text-2xl">Categories</h1>
@@ -97,6 +108,7 @@ export default function Task() {
             )
           )}
         </div>
+        
         {items?.length > 0 ? (
           <div>
             {/* tasks displaying section/ card */}
@@ -107,13 +119,6 @@ export default function Task() {
                   className="lg:w-[70%] mx-auto my-2 relative bg-gray-100 rounded-lg p-6 shadow-md flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-6"
                   key={item?._id}
                 >
-                  {/* <div className="flex-shrink-0">
-                    <img
-                      className="h-24 w-24 rounded-full"
-                      src="https://via.placeholder.com/150"
-                      alt="Card Image"
-                    />
-                  </div> */}
                   <div className="flex flex-col">
                     <h2 className="text-xl font-bold text-gray-800 capitalize">
                       {item?.title}
@@ -168,85 +173,20 @@ export default function Task() {
                     ${item?.amount}
                   </div>
                 </div>
-                // <div
-                //   className="max-w-sm rounded overflow-hidden shadow-lg bg-white mx-2 my-4 h-80"
-                //   key={item._id}
-                // >
-                //   <div className="px-6 py-4">
-                //     <div className="font-bold text-xl mb-2 capitalize">
-                //       {item.title}
-                //     </div>
-                //     <ScrollPanel style={{ width: "100%", height: "50px" }}>
-                //       <p className="text-gray-700 text-base">
-                //         {/* this below will be use to render html text on the task page, that text which will be fetched from the database */}
-                //         <div
-                //         title={truncateDescription(item.description)}
-                //           className="ql-editor"
-                //           dangerouslySetInnerHTML={{
-                //             __html: truncateDescription(item.description),
-                //           }}
-                //         ></div>
-                //       </p>
-                //     </ScrollPanel>
-                //     <div className="text-gray-700 text-base">
-                //       <div className="flex">
-                //       <h1 className="bg-green-100 border-2 border-green-500 rounded-lg w-max h-max m-2 px-2 py-1">reward: ${item.amount}</h1>
-                //       <h1 className="bg-yellow-100 border-2 border-yellow-500 h-max rounded-lg w-max m-2 px-2 py-1">{item.selectedCategory}</h1>
-
-                //       </div>
-                //       <h1 className="bg-yellow-100 h-max rounded-lg w-max m-2 px-2 py-1">Max time to implement: {item.maxTimeSpan.name}</h1>
-                //     </div>
-                //   </div>
-                //   <div className="px-6 py-4 flex justify-between">
-                //     <button
-                //       onClick={() => {
-                //         router.push({
-                //           pathname: `/task/detail`,
-                //           query: { taskId: item.taskId },
-                //         });
-                //       }}
-                //       className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded focus:outline-none focus:shadow-outline"
-                //     >
-                //       Details
-                //     </button>
-                //     <div>
-                //       <Button
-                //         tooltip="Accepted Task"
-                //         tooltipOptions={{ position: "top" }}
-                //         tooltipOpacity={0.5}
-                //         className="bg-green-400 hover:bg-green-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mx-1"
-                //       >
-                //         <h1>A:{0}</h1>
-                //       </Button>
-                //       <Button
-                //         tooltip="Rejected Task"
-                //         tooltipOptions={{ position: "top" }}
-                //         tooltipOpacity={0.5}
-                //         className="bg-red-400 hover:bg-red-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mx-1"
-                //       >
-                //         <h1>R:{0}</h1>
-                //       </Button>
-                //       <Button
-                //         tooltip="Reassign Task"
-                //         tooltipOptions={{ position: "top" }}
-                //         tooltipOpacity={0.5}
-                //         className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mx-1"
-                //       >
-                //         <h1>Re:{0}</h1>
-                //       </Button>
-                //     </div>
-                //   </div>
-                // </div>
+               
               ))}
             </div>
           </div>
         ) : (
           <div className="my-10 text-center">
+            {/* 404 not found message, if no tasks are found  */}
             <TbError404 className="mx-auto" size={100} />
             <h1 className="text-2xl font-bold mx-auto">No tasks found</h1>
           </div>
         )}
       </div>
-    </div>
+    </div>}
+    
+    </>
   );
 }

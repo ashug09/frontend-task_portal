@@ -23,7 +23,7 @@ export default function App({ Component, pageProps }) {
       setUser(user);
     }
   });
-  if (user || !user) {
+  if (user) {
     return (
       <>
         <div className="lg:mx-10">

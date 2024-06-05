@@ -123,7 +123,7 @@ export default function Main() {
 
             {/* number of tasks pending for evaluation  */}
             <div className="bg-white shadow-lg rounded-lg m-5 h-56 w-52 relative">
-              <h1 className="pt-8 pl-8 text-5xl">0</h1>
+              <h1 className="pt-8 pl-8 text-5xl">{pendingEvaluations}</h1>
               <h1 className="pt-5 pl-5 text-lg font-semibold">
                 Tasks Pending For Evaluation
               </h1>
@@ -147,7 +147,7 @@ export default function Main() {
 
             {/* number of tasks for which evaluation has been done  */}
             <div className="bg-white shadow-lg rounded-lg m-5 h-56 w-52 relative">
-              <h1 className="pt-8 pl-8 text-5xl">{pendingEvaluations}</h1>
+              <h1 className="pt-8 pl-8 text-5xl">0</h1>
               <h1 className="pt-5 pl-5 text-lg font-semibold">
                 Evaluation Done
               </h1>
