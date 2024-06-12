@@ -86,7 +86,7 @@ const PaymentDetailsPage = () => {
 
         <div className="">
           {/* transactions  */}
-          
+         
 
           {/* payment methods  */}
           <div className=" p-10 mt-10 bg-white shadow rounded-3xl ">
