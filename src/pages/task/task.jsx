@@ -7,7 +7,7 @@ import { Button } from "primereact/button";
 import { useRouter } from "next/router";
 import Search_sort from "./search_sort";
 import { useDispatch, useSelector } from "react-redux";
-import { addTask } from "../features/taskSlice";
+import { addTask } from "../../features/taskSlice";
 import { TbError404 } from "react-icons/tb";
 import { FaRepeat } from "react-icons/fa6";
 import { IoBookmark } from "react-icons/io5";

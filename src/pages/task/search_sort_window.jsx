@@ -11,7 +11,7 @@ import { useFormik } from "formik";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
-import { addTask } from "../features/taskSlice";
+import { addTask } from "../../features/taskSlice";
 export default function Search_sort_window({hideButton}) {
   const dispatch = useDispatch();
   const parameter = ["One Time", "Multiple Time"];

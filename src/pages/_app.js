@@ -10,7 +10,7 @@ import { PrimeReactProvider } from "primereact/api";
 import "primeicons/primeicons.css";
 import "primereact/resources/themes/lara-light-cyan/theme.css";
 import New_nav from "./new_nav";
-import { store } from "../pages/store";
+import { store } from "../store";
 import { Provider } from "react-redux";
 
 export default function App({ Component, pageProps }) {
