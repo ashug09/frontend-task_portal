@@ -88,7 +88,7 @@ SEOSpaceTrax is built with the following technologies:
 - **Stripe**: For payment processing.
 - **AWS S3**: For storing and retrieving uploaded pictures.
 
-##Backend
+## Backend
 
 Check out the backend code[here](https://github.com/ashug09/backend-task_portal).
 ---
