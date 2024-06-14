@@ -90,7 +90,7 @@ SEOSpaceTrax is built with the following technologies:
 
 ## Backend
 
-Check out the backend code[here](https://github.com/ashug09/backend-task_portal).
+Check out the backend code [here](https://github.com/ashug09/backend-task_portal).
 ---
 
 Thank you for using SEOSpaceTrax! We hope it helps you manage your tasks efficiently and effectively. Happy coding!
