@@ -42,6 +42,10 @@ export default function Landing() {
         <h1 className=" text-center">Email: sharma@mail.com</h1>
         <h1 className=" text-center">Password: 12345678</h1>
       </div>
+      <div className="bg-orange-100 border border-orange-500 text-orange-700 my-10 px-4 py-3 rounded relative">
+      <strong className="font-bold">Warning!</strong>
+      <span className="block sm:inline">Loading data may take some time (upto 1 min) as our server is hosted on shared hosting.</span>
+    </div>
         <h1 className="text-white text-justify text-3xl mb-4">SEOSpaceTrax</h1>
         <h1 className="text-white text-justify text-xl font-medium">
           Welcome to SEOSpaceTrax, your go-to platform for maximizing your SEO
