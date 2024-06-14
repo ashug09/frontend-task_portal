@@ -53,7 +53,7 @@ function Pay({amount}) {
           razorpaySignature: response.razorpay_signature,
         };
         await axios
-          .post("${process.env.NEXT_PUBLIC_BE_URI}/api/v1/payment/verify", item)
+          .post(`${process.env.NEXT_PUBLIC_BE_URI}/api/v1/payment/verify`, item)
           .then((res) => {
             console.log(res.data);
             if (res.status == 200) {
@@ -62,7 +62,7 @@ function Pay({amount}) {
           })
           .catch((err) => console.log(err.data));
       },
-      callback_url: "http://localhost:3000/",
+      callback_url: process.env.NEXT_PUBLIC_FE_URI,
       notes: {
         address: "Razorpay Corporate Office",
       },
